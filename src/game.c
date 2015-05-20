@@ -24,6 +24,15 @@ void game_Free(game_State* game) {
 	free(game);
 }
 
+void game_Sync(game_State* game, int* heapData, int heapCount) {
+	free(game->heap);
+	
+	game->heap = (int*)malloc(heapCount * sizeof(int));
+	memcpy(game->heap, heapData, heapCount * sizeof(int));
+
+	game->heapCount = heapCount;
+}
+
 bool game_Turn(game_State* game, int heapId, int itemCount) {
 	if(heapId >= game->heapCount) 
 		return false;
@@ -49,3 +58,4 @@ bool game_IsFinished(game_State* game) {
 int game_GetHeapCount(game_State* game) { return game->heapCount; }
 int game_GetHeap(game_State* game, int heapId) { return (heapId < game->heapCount) ? game->heap[heapId] : -1; }
 int game_GetMaxItemsPerTurn(game_State* game) { return game->maxItemsPerTurn; }
+const int* game_GetHeapData(game_State* game) { return game->heap; }
