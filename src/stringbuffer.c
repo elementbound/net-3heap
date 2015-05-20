@@ -20,6 +20,15 @@ STRINGBUFFER* stringbuffer_create() {
 	return strbuff;
 }
 
+void stringbuffer_free(STRINGBUFFER* strbuff) {
+	free(strbuff->data);
+	free(strbuff);
+}
+
+void stringbuffer_free_shallow(STRINGBUFFER* strbuff) {
+	free(strbuff);
+}
+
 int  stringbuffer_reserve(STRINGBUFFER* strbuff, size_t size) {
 	if(size <= strbuff->capacity)
 		return 1;

@@ -6,7 +6,8 @@
 typedef struct STRINGBUFFER STRINGBUFFER;
 
 STRINGBUFFER* stringbuffer_create();
-void strinbuffer_free(STRINGBUFFER* strbuff);
+void stringbuffer_free(STRINGBUFFER* strbuff);
+void stringbuffer_free_shallow(STRINGBUFFER* strbuff); //leave its string intact
 
 int  stringbuffer_reserve(STRINGBUFFER* strbuff, size_t size);
 
