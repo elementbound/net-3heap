@@ -11,6 +11,7 @@ add_executable("client" "client.c" ${COMMON_SOURCES})
 
 if(CMAKE_COMPILER_IS_GNUCC) 
 	set(CMAKE_C_FLAGS "-std=c99")
+	set(CMAKE_C_FLAGS_DEBUG "-ggdb")
 else()
 	message(WARNING "Unknown compiler. You might want to set your C standard to C99")
 endif()

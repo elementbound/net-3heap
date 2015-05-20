@@ -98,6 +98,8 @@ bool server_Tick() {
 		printf("Waiting for player[%d]... %d\r", server_NextPlayer, waitCounter);
 
 	recv_stringbuffer(server_PlayerSockets[server_NextPlayer], server_Buffer);
+	printf("Received buffer: %s\n", stringbuffer_data(server_Buffer));
+
 	proto_Msg* msg = proto_ParseMsg(stringbuffer_data(server_Buffer));
 	proto_Msg* msgResponse = NULL;
 

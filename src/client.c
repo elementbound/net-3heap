@@ -18,6 +18,8 @@ game_State* client_Game;
 
 SOCKET client_Socket;
 
+STRINGBUFFER* client_Buffer;
+
 bool client_Init();
 bool client_Tick();
 void client_Shutdown();
@@ -59,11 +61,50 @@ bool client_Init() {
 		return 0;
 
 	client_Game = game_Init(1, 1);
+	client_Buffer = stringbuffer_create();
 	return 1;
 }
 
 bool client_Tick() {
-	return false;
+	int heapId, itemCount;
+
+	printf("Your next move? ");
+	scanf("%d %d", &heapId, &itemCount);
+
+	proto_Msg* msg = proto_CreateTurnMsg(heapId, itemCount);
+	char* buffer = proto_SerializeMsg(msg);
+
+	send(client_Socket, buffer, strlen(buffer)+1, 0);
+	printf("Move sent, waiting for response... \n");
+
+	proto_FreeMsg(msg);
+	free(buffer);
+
+	//
+
+	while(!net_CanRead(client_Socket))
+		;
+
+	stringbuffer_clear(client_Buffer);
+	recv_stringbuffer(client_Socket, client_Buffer);
+
+	msg = proto_ParseMsg(stringbuffer_data(client_Buffer));
+	switch(msg->type) {
+		case MSG_ACK: 
+			printf("Server acknowledged with result %d\n", msg->ack.response);
+		break;
+
+		case MSG_FINISH: 
+			printf("Game ended\n");
+		break;
+
+		default: 
+			printf("%s\n", stringbuffer_data(client_Buffer));
+	}
+
+	proto_FreeMsg(msg);
+
+	return true;
 }
 
 void client_Shutdown() {
