@@ -23,7 +23,7 @@ int recv_stringbuffer(SOCKET sock, STRINGBUFFER* strbuff) {
 	int	recvdTotal = 0;
 	int recvd;
 
-	timeval timeout;
+	struct timeval timeout;
 		timeout.tv_sec = 0;
 		timeout.tv_usec = TIMEOUT_USEC;
 
