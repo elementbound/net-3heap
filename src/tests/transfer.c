@@ -1,4 +1,3 @@
-#define _WIN32_WINNT 0x501 //Why even? 
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <stdio.h>
