@@ -1,8 +1,11 @@
+#define _WIN32_WINNT 0x501 //Why even? 
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <stdio.h>
+#include <string.h>
 
-#define PORT 49153
+#define PORT 		65535
+#define PORT_STR	"65535"
 
 #if !defined(CLIENT) && !defined(SERVER)
 	#error Neither CLIENT or SERVER are specified
@@ -30,11 +33,28 @@ int main()
 			serverAddr.sin_addr.s_addr = INADDR_ANY;
 			serverAddr.sin_port = htons(PORT);
 
-			res = bind(listenSocket, (struct sockaddr*)&serverAddr, sizeof(serverAddr));
-			if(res != 0) {
-				printf("Bind fail: %d\n", res);
-				return 1;
-			}
+		res = bind(listenSocket, (struct sockaddr*)&serverAddr, sizeof(serverAddr));
+		if(res != 0) {
+			printf("Bind fail: %d - %d\n", res, WSAGetLastError());
+			WSACleanup();
+			return 1;
+		}
+
+		printf("Listening on port %d... ", PORT);
+		res = listen(listenSocket, SOMAXCONN);
+		if(res != 0) {
+			printf("fail#$d\n", WSAGetLastError());
+			WSACleanup();
+			return 1;
+		}
+
+		SOCKET clientSocket = accept(listenSocket, NULL, NULL);
+		if(clientSocket == INVALID_SOCKET) {
+			printf("fail#%d\n", WSAGetLastError());
+			WSACleanup();
+			return 1;
+		}
+		printf("success\n");
 	#endif
 
 	#ifdef CLIENT
