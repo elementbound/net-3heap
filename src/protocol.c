@@ -62,7 +62,8 @@ void proto_FreeMsg(proto_Msg* msg) {
 	free(msg);
 }
 
-//
+//===========================================================================================//
+//Message parsers
 
 proto_Msg* proto_ParseSync(const char* buffer) {
 	proto_Msg* msg = proto_AllocMsg();
@@ -120,15 +121,67 @@ proto_Msg* proto_ParseAck(const char* buffer) {
 	return msg;
 }
 
-//
+//===========================================================================================//
+//Message serializers
 
-char* proto_SerializeSync(proto_Msg* msg); 
-char* proto_SerializeTurn(proto_Msg* msg); 
-char* proto_SerializeSurrender(proto_Msg* msg); 
-char* proto_SerializeFinish(proto_Msg* msg); 
-char* proto_SerializeAck(proto_Msg* msg); 
+char* proto_SerializeSync(proto_Msg* msg) {
+	STRINGBUFFER* strbuff = stringbuffer_create();
+	char* str;
 
-//
+	stringbuffer_printf(strbuff, "%s|%d", MSGSTR_SYNC, msg->sync.heapCount);
+	for(int i=0; i < msg->sync.heapCount; i++)
+		stringbuffer_printf(strbuff, "|%d", msg->sync.heapData[i]);
+
+	str = stringbuffer_data(strbuff);
+	stringbuffer_free_shallow(strbuff);
+	return str;
+}
+
+char* proto_SerializeTurn(proto_Msg* msg) {
+	STRINGBUFFER* strbuff = stringbuffer_create();
+	char* str;
+	
+	stringbuffer_printf(strbuff, "%s|%d|%d", MSGSTR_TURN, msg->turn.heapId, msg->turn.itemCount);
+
+	str = stringbuffer_data(strbuff);
+	stringbuffer_free_shallow(strbuff);
+	return str;
+}
+
+char* proto_SerializeSurrender(proto_Msg* msg) {
+	STRINGBUFFER* strbuff = stringbuffer_create();
+	char* str;
+	
+	stringbuffer_printf(strbuff, "%s|", MSGSTR_SURRENDER);
+
+	str = stringbuffer_data(strbuff);
+	stringbuffer_free_shallow(strbuff);
+	return str;
+}
+
+char* proto_SerializeFinish(proto_Msg* msg) {
+	STRINGBUFFER* strbuff = stringbuffer_create();
+	char* str;
+	
+	stringbuffer_printf(strbuff, "%s|", MSGSTR_FINISH);
+
+	str = stringbuffer_data(strbuff);
+	stringbuffer_free_shallow(strbuff);
+	return str;
+}
+
+char* proto_SerializeAck(proto_Msg* msg) {
+	STRINGBUFFER* strbuff = stringbuffer_create();
+	char* str;
+	
+	stringbuffer_printf(strbuff, "%s|%d", MSGSTR_ACK, msg->ack.response);
+
+	str = stringbuffer_data(strbuff);
+	stringbuffer_free_shallow(strbuff);
+	return str;
+} 
+
+//===========================================================================================//
 
 proto_Msg* proto_ParseMsg(const char* buffer) {
 	proto_Msg* msg = NULL;
