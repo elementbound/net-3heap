@@ -4,7 +4,6 @@
 #include <string.h>
 
 #define PORT 		65535
-#define PORT_STR	"65535"
 
 #if !defined(CLIENT) && !defined(SERVER)
 	#error Neither CLIENT or SERVER are specified
