@@ -77,6 +77,8 @@ proto_Msg* proto_ParseSync(const char* buffer) {
 	//Skip type
 
 	token = strtok(NULL, "|");
+	msg->sync.maxItemsPerTurn = atoi(token);
+	token = strtok(NULL, "|");
 	msg->sync.heapCount = atoi(token);
 	msg->sync.heapData = (int*)malloc(sizeof(int) * msg->sync.heapCount);
 
@@ -128,7 +130,7 @@ char* proto_SerializeSync(proto_Msg* msg) {
 	STRINGBUFFER* strbuff = stringbuffer_create();
 	char* str;
 
-	stringbuffer_printf(strbuff, "%s|%d", MSGSTR_SYNC, msg->sync.heapCount);
+	stringbuffer_printf(strbuff, "%s|%d|%d", MSGSTR_SYNC, msg->sync.maxItemsPerTurn, msg->sync.heapCount);
 	for(int i=0; i < msg->sync.heapCount; i++)
 		stringbuffer_printf(strbuff, "|%d", msg->sync.heapData[i]);
 

@@ -9,7 +9,7 @@ game_State* game_Init(int itemsPerHeap, int maxItemsPerTurn);
 void		game_Free(game_State* game);
 
 bool		game_Turn(game_State* game, int heapId, int itemCount);
-void		game_Sync(game_State* game, int* heapData, int heapCount);
+void		game_Sync(game_State* game, int* heapData, int heapCount, int maxItemsPerTurn);
 
 bool		game_IsFinished(game_State* game);
 

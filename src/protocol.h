@@ -22,6 +22,7 @@ typedef struct {
 		struct {
 			int  heapCount;
 			int* heapData;
+			int	 maxItemsPerTurn;
 		} sync;
 
 		struct {

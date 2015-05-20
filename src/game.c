@@ -24,13 +24,14 @@ void game_Free(game_State* game) {
 	free(game);
 }
 
-void game_Sync(game_State* game, int* heapData, int heapCount) {
+void game_Sync(game_State* game, int* heapData, int heapCount, int maxItemsPerTurn) {
 	free(game->heap);
 	
 	game->heap = (int*)malloc(heapCount * sizeof(int));
 	memcpy(game->heap, heapData, heapCount * sizeof(int));
 
 	game->heapCount = heapCount;
+	game->maxItemsPerTurn = maxItemsPerTurn;
 }
 
 bool game_Turn(game_State* game, int heapId, int itemCount) {

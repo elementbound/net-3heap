@@ -85,6 +85,10 @@ bool server_AcceptPlayer(int playerId) {
 	return 1;
 }
 
+bool server_Tick() {
+	return false;
+}
+
 void server_Shutdown() {
 	closesocket(server_ListenSocket);
 
