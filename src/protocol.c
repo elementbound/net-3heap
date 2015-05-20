@@ -64,7 +64,69 @@ void proto_FreeMsg(proto_Msg* msg) {
 
 //
 
+proto_Msg* proto_ParseSync(const char* buffer) {
+	proto_Msg* msg = proto_AllocMsg();
+	msg->type = MSG_SYNC;
 
+	char* str = (char*)calloc(strlen(buffer)+1, sizeof(char));
+	char* token = NULL;
+	strcpy(str, buffer);
+	
+	token = strtok(str, "|");
+	//Skip type
+
+	token = strtok(NULL, "|");
+	msg->sync.heapCount = atoi(token);
+	msg->sync.heapData = (int*)malloc(sizeof(int) * msg->sync.heapCount);
+
+	for(int i = 0; token = strtok(NULL, "|"); i++) 
+		msg->sync.heapData[i] = atoi(token);
+
+	free(str);
+	return msg;
+}
+
+proto_Msg* proto_ParseTurn(const char* buffer){
+	proto_Msg* msg = proto_AllocMsg();
+	msg->type = MSG_TURN;
+
+	char* str = (char*)calloc(strlen(buffer)+1, sizeof(char));
+	strcpy(str, buffer);
+	sscanf(strchr(str, '|')+1, "%d|%d", &msg->turn.heapId, &msg->turn.itemCount);
+
+	free(str);
+	return msg;
+}
+
+proto_Msg* proto_ParseSurrender(const char* buffer) {
+	proto_Msg* msg = proto_AllocMsg();
+	msg->type = MSG_SURRENDER;
+
+	return msg;
+}
+
+proto_Msg* proto_ParseFinish(const char* buffer) {
+	proto_Msg* msg = proto_AllocMsg();
+	msg->type = MSG_FINISH;
+	
+	return msg;
+} 
+
+proto_Msg* proto_ParseAck(const char* buffer) {
+	proto_Msg* msg = proto_AllocMsg();
+	msg->type = MSG_ACK;
+	msg->ack.response = atoi(strchr(buffer, '|')+1);
+	
+	return msg;
+}
+
+//
+
+char* proto_SerializeSync(proto_Msg* msg); 
+char* proto_SerializeTurn(proto_Msg* msg); 
+char* proto_SerializeSurrender(proto_Msg* msg); 
+char* proto_SerializeFinish(proto_Msg* msg); 
+char* proto_SerializeAck(proto_Msg* msg); 
 
 //
 
