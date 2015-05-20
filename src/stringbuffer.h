@@ -10,6 +10,7 @@ void stringbuffer_free(STRINGBUFFER* strbuff);
 void stringbuffer_free_shallow(STRINGBUFFER* strbuff); //leave its string intact
 
 int  stringbuffer_reserve(STRINGBUFFER* strbuff, size_t size);
+void stringbuffer_clear(STRINGBUFFER* strbuff);
 
 void stringbuffer_append(STRINGBUFFER* strbuff, const char* str);
 void stringbuffer_printf(STRINGBUFFER* strbuff, const char* format, ...);

@@ -53,6 +53,14 @@ int  stringbuffer_reserve(STRINGBUFFER* strbuff, size_t size) {
 	return 1;
 }
 
+void stringbuffer_clear(STRINGBUFFER* strbuff) {
+	free(strbuff->data);
+
+	strbuff->data = NULL;
+	strbuff->size = 0;
+	strbuff->capacity = 0;
+}
+
 void stringbuffer_append(STRINGBUFFER* strbuff, const char* str) {
 	int size = strlen(str)+1;
 

@@ -23,6 +23,8 @@ int 		server_NextPlayer = -1;
 SOCKET server_ListenSocket;
 SOCKET server_PlayerSockets[PLAYER_COUNT];
 
+STRINGBUFFER* server_Buffer; 
+
 bool server_Init();
 bool server_AcceptPlayer(int playerId);
 bool server_Tick();
@@ -70,6 +72,7 @@ bool server_Init() {
 
 	server_Game = game_Init(server_HeapMax, server_TakeMax);
 	server_NextPlayer = 0;
+	server_Buffer = stringbuffer_create();
 	return 1;
 }
 
@@ -82,11 +85,46 @@ bool server_AcceptPlayer(int playerId) {
 	if(server_PlayerSockets[playerId] == INVALID_SOCKET)
 		return 0;
 
+	stringbuffer_clear(server_Buffer);
 	return 1;
 }
 
 bool server_Tick() {
-	return false;
+	if(!net_CanWrite(server_PlayerSockets[server_NextPlayer]))
+		return 0;
+
+	int waitCounter;
+	for(waitCounter = 0; !net_CanRead(server_PlayerSockets[server_NextPlayer]); waitCounter++)
+		printf("Waiting for player[%d]... %d\r", server_NextPlayer, waitCounter);
+
+	recv_stringbuffer(server_PlayerSockets[server_NextPlayer], server_Buffer);
+	proto_Msg* msg = proto_ParseMsg(stringbuffer_data(server_Buffer));
+	proto_Msg* msgResponse = NULL;
+
+	switch(msg->type) {
+		case MSG_TURN:
+			if(game_Turn(server_Game, msg->turn.heapId, msg->turn.itemCount)) 
+				msgResponse = proto_CreateAckMsg(ACK_VALID);
+			else
+				msgResponse = proto_CreateAckMsg(ACK_INVALID);
+		break;
+
+		case MSG_SURRENDER:
+			msgResponse = proto_CreateAckMsg(ACK_VALID);
+		break;
+
+		default: 
+			msgResponse = proto_CreateAckMsg(ACK_INVALID);
+	}
+
+	char* msgBuffer = proto_SerializeMsg(msgResponse);
+	send(server_PlayerSockets[server_NextPlayer], msgBuffer, strlen(msgBuffer)+1, 0);
+
+	free(msgBuffer);
+	proto_FreeMsg(msg);
+	proto_FreeMsg(msgResponse);
+
+	return 1;
 }
 
 void server_Shutdown() {
