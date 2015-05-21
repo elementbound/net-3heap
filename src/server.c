@@ -97,22 +97,29 @@ bool server_Tick() {
 	for(waitCounter = 0; !net_CanRead(server_PlayerSockets[server_NextPlayer]); waitCounter++)
 		printf("Waiting for player[%d]... %d\r", server_NextPlayer, waitCounter);
 
+	stringbuffer_clear(server_Buffer);
 	recv_stringbuffer(server_PlayerSockets[server_NextPlayer], server_Buffer);
 	printf("Received buffer: %s\n", stringbuffer_data(server_Buffer));
 
 	proto_Msg* msg = proto_ParseMsg(stringbuffer_data(server_Buffer));
 	proto_Msg* msgResponse = NULL;
+	bool validMove = 0;
 
 	switch(msg->type) {
 		case MSG_TURN:
-			if(game_Turn(server_Game, msg->turn.heapId, msg->turn.itemCount)) 
+			printf("Got a turn: Take %d from %d\n", msg->turn.itemCount, msg->turn.heapId);
+
+			if(game_Turn(server_Game, msg->turn.heapId, msg->turn.itemCount)) {
 				msgResponse = proto_CreateAckMsg(ACK_VALID);
+				validMove = 1;
+			}
 			else
 				msgResponse = proto_CreateAckMsg(ACK_INVALID);
 		break;
 
 		case MSG_SURRENDER:
 			msgResponse = proto_CreateAckMsg(ACK_VALID);
+			validMove = 1;
 		break;
 
 		default: 
@@ -121,6 +128,9 @@ bool server_Tick() {
 
 	char* msgBuffer = proto_SerializeMsg(msgResponse);
 	send(server_PlayerSockets[server_NextPlayer], msgBuffer, strlen(msgBuffer)+1, 0);
+
+	if(validMove) 
+		server_NextPlayer = (server_NextPlayer+1) % PLAYER_COUNT;
 
 	free(msgBuffer);
 	proto_FreeMsg(msg);

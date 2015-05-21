@@ -88,6 +88,8 @@ bool client_Tick() {
 	stringbuffer_clear(client_Buffer);
 	recv_stringbuffer(client_Socket, client_Buffer);
 
+	printf("Received buffer: %s\n", stringbuffer_data(client_Buffer));
+
 	msg = proto_ParseMsg(stringbuffer_data(client_Buffer));
 	switch(msg->type) {
 		case MSG_ACK: 
@@ -97,9 +99,6 @@ bool client_Tick() {
 		case MSG_FINISH: 
 			printf("Game ended\n");
 		break;
-
-		default: 
-			printf("%s\n", stringbuffer_data(client_Buffer));
 	}
 
 	proto_FreeMsg(msg);

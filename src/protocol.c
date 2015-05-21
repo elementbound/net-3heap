@@ -190,10 +190,10 @@ proto_Msg* proto_ParseMsg(const char* buffer) {
 	proto_Msg* msg = NULL;
 
 	char* type;
-	int typeLength = strchr(buffer, '|') - type;
+	int typeLength = strchr(buffer, '|') - buffer;
 
-	type = (char*)calloc(typeLength, sizeof(char));
-	strncpy(type, buffer, typeLength-1);
+	type = (char*)calloc(typeLength+1, sizeof(char));
+	strncpy(type, buffer, typeLength);
 
 	if(strcmp(type, MSGSTR_SYNC) == 0) 
 		msg = proto_ParseSync(buffer);
@@ -229,7 +229,7 @@ char* proto_SerializeMsg(proto_Msg* msg) {
 			break;
 
 		case MSG_ACK:
-			return proto_SerializeFinish(msg);
+			return proto_SerializeAck(msg);
 			break;
 
 		default:

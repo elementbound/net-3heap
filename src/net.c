@@ -2,6 +2,8 @@
 #include <ws2tcpip.h>
 #include "net.h"
 
+#include <stdio.h>
+
 bool net_Init() {
 	WSADATA wsaData;
 	
@@ -47,6 +49,7 @@ int recv_stringbuffer(SOCKET sock, STRINGBUFFER* strbuff) {
 	int	recvdTotal = 0;
 	int recvd;
 
+	//printf("[recv]Receive loop\n");
 	while(net_CanRead(sock)) {
 		recvd = recv(sock, buffer, 64, 0);
 		if(recvd < 0)
@@ -55,11 +58,15 @@ int recv_stringbuffer(SOCKET sock, STRINGBUFFER* strbuff) {
 		buffer[recvd] = '\0';
 		stringbuffer_append(strbuff, buffer);
 		recvdTotal += recvd;
+
+		//printf("\tReceived %d bytes: %s\n", recvd, buffer);
 	}
 
+	//printf("\tFull message: %s\n", stringbuffer_data(strbuff));
+	//printf("\tMessage size: %d/%d\n", recvdTotal, stringbuffer_size(strbuff));
 	return recvdTotal;
 }
 
 int send_stringbuffer(SOCKET sock, STRINGBUFFER* strbuff) {
-	return send(sock, stringbuffer_data(strbuff), stringbuffer_size(strbuff)+1, 0);
+	return send(sock, stringbuffer_data(strbuff), stringbuffer_size(strbuff), 0);
 }

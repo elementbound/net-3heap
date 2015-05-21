@@ -4,6 +4,7 @@
 #include <string.h>
 
 #define ALLOC_SIZE 512
+#define STRBUFF_TAIL(strbuff) ((strbuff->size == 0) ? strbuff->data : (strbuff->data + strbuff->size - 1))
 
 typedef struct {
 	char* 	data;
@@ -35,20 +36,20 @@ int  stringbuffer_reserve(STRINGBUFFER* strbuff, size_t size) {
 
 	size = (size/ALLOC_SIZE + 1)*ALLOC_SIZE;
 
-	char* new_data = (char*)malloc(size);
+	char* new_data = (char*)calloc(size, sizeof(char));
 	if(new_data == NULL)
 		return 0;
 
-	if(size > strbuff->size) {
+	if(size > strbuff->size) 
 		memcpy(new_data, strbuff->data, strbuff->size);
-		memset(new_data+strbuff->size, 0, size-strbuff->size);
-	}
 	else 
 		memcpy(new_data, strbuff->data, size);
 
 	free(strbuff->data);
 	strbuff->data = new_data;
 	strbuff->capacity = size;
+	if(size < strbuff->size) 
+		strbuff->size = strbuff->capacity;
 
 	return 1;
 }
@@ -65,20 +66,27 @@ void stringbuffer_append(STRINGBUFFER* strbuff, const char* str) {
 	int size = strlen(str)+1;
 
 	stringbuffer_reserve(strbuff, strbuff->size + size);
-	memcpy(strbuff->data + strbuff->size, str, size);
-	strbuff->size += size-1;
+	memcpy(STRBUFF_TAIL(strbuff), str, size);
+	
+	if(strbuff->size == 0)
+		strbuff->size += size;
+	else
+		strbuff->size += size-1;
 }
 
 void stringbuffer_printf(STRINGBUFFER* strbuff, const char* format, ...) {
 	va_list args;
 	va_start(args, format);
 
-	int length = vsnprintf(NULL, 0, format, args);
+	int length = vsnprintf(NULL, 0, format, args) + 1;
 
 	stringbuffer_reserve(strbuff, strbuff->size + length);
-	vsnprintf(strbuff->data + strbuff->size, strbuff->capacity - strbuff->size, format, args);
+	vsnprintf(STRBUFF_TAIL(strbuff), length, format, args);
 
-	strbuff->size += length; 
+	if(strbuff->size == 0)
+		strbuff->size += length;
+	else
+		strbuff->size += length-1;
 }
 
 void stringbuffer_append_int(STRINGBUFFER* strbuff, 	int val) 			{ stringbuffer_printf(strbuff, "%d", val); }
