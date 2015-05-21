@@ -14,13 +14,14 @@ proto_Msg* proto_AllocMsg() {
 	return msg;
 }
 
-proto_Msg* proto_CreateSyncMsg(int heapCount, const int* heapData) {
+proto_Msg* proto_CreateSyncMsg(int heapCount, const int* heapData, int maxItemsPerTurn) {
 	proto_Msg* msg = proto_AllocMsg();
 
 	msg->type = MSG_SYNC;
 	msg->sync.heapCount = heapCount;
 	msg->sync.heapData = (int*)malloc(sizeof(int)*heapCount);
 		memcpy(msg->sync.heapData, heapData, sizeof(int)*heapCount);
+	msg->sync.maxItemsPerTurn = maxItemsPerTurn;
 
 	return msg;
 }

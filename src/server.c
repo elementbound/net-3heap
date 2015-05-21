@@ -13,6 +13,8 @@
 #define die(msg) {printf(msg); exit(1);}
 
 #define PLAYER_COUNT 2
+#define TICK_REST 50
+#define DISCONNECT_REST 500
 
 int server_Port = 65535;
 int server_HeapMax = 3;
@@ -56,7 +58,7 @@ int main(int argc, char** argv) {
 	}
 
 	while(server_Tick())
-		;//Sleep(2000);
+		Sleep(TICK_REST);
 
 	server_Shutdown();
 	net_Shutdown();
@@ -145,6 +147,18 @@ bool server_Tick() {
 		case MSG_SURRENDER:
 			msgResponse = proto_CreateAckMsg(ACK_VALID);
 			validMove = 1;
+
+			char* msgBuffer = proto_SerializeMsg(msgResponse);
+			send(server_PlayerSockets[server_NextPlayer], msgBuffer, strlen(msgBuffer)+1, 0);
+
+			free(msgBuffer);
+			proto_FreeMsg(msg);
+			proto_FreeMsg(msgResponse);
+
+			for(int i = 0; i < PLAYER_COUNT; i++)
+				server_PlayerResult[i] = (i == server_NextPlayer) ? FIN_LOSE : FIN_WIN;
+
+			return 0;
 		break;
 
 		default: 
@@ -184,7 +198,7 @@ void server_Shutdown() {
 
 	for(int i = 0; i < PLAYER_COUNT; i++) {
 		printf("\tParting ways with player %d\n", i);
-		Sleep(500);
+		Sleep(DISCONNECT_REST);
 
 		printf("\t\tSending finish message\n", i);
 		proto_Msg* msg = proto_CreateFinishMsg(server_PlayerResult[i]);
@@ -193,6 +207,11 @@ void server_Shutdown() {
 
 		free(buffer);
 		proto_FreeMsg(msg);
+
+		//Wait for ack
+		printf("\t\tWaiting for player to ack\n");
+		while(!net_CanRead(server_PlayerSockets[i]))
+			;
 
 		printf("\t\tClosing socket\n");
 		closesocket(server_PlayerSockets[i]);
@@ -217,7 +236,7 @@ void server_PrintState() {
 }
 
 void server_Sync(int playerId) {
-	proto_Msg* msg = proto_CreateSyncMsg(game_GetHeapCount(server_Game), game_GetHeapData(server_Game));
+	proto_Msg* msg = proto_CreateSyncMsg(game_GetHeapCount(server_Game), game_GetHeapData(server_Game), game_GetMaxItemsPerTurn(server_Game));
 	char* buffer = proto_SerializeMsg(msg);
 
 	send(server_PlayerSockets[playerId], buffer, strlen(buffer)+1, 0);

@@ -11,6 +11,7 @@
 #include "console.h"
 
 #define die(msg) {printf(msg); exit(1);}
+#define TICK_REST 50
 
 int client_Ip = -1;
 int client_Port = -1;
@@ -41,7 +42,7 @@ int main(int argc, char** argv) {
 		die("Client init fail\n");
 
 	while(client_Tick())
-		;//Sleep(2000);
+		Sleep(TICK_REST);
 
 	client_Shutdown();
 	net_Shutdown();
@@ -85,7 +86,7 @@ bool client_Tick() {
 	proto_Msg* msg = proto_ParseMsg(stringbuffer_data(client_Buffer));
 
 	if(msg->type == MSG_SYNC) {
-		printf("Syncing game state... \n");
+		printf("Syncing game state... \n\t%s\n", stringbuffer_data(client_Buffer));
 		game_Sync(client_Game, msg->sync.heapData, msg->sync.heapCount, msg->sync.maxItemsPerTurn);
 	}
 	else if (msg->type == MSG_FINISH) {
@@ -109,9 +110,6 @@ bool client_Tick() {
 		return 0;
 	}
 
-	printf("Syncing game state... \n");
-	game_Sync(client_Game, msg->sync.heapData, msg->sync.heapCount, msg->sync.maxItemsPerTurn);
-
 	proto_FreeMsg(msg);
 	msg = NULL;
 
@@ -122,16 +120,39 @@ bool client_Tick() {
 	console_Clear();
 	client_PrintState();
 	printf("Your next move? ");
-	scanf("%d %d", &heapId, &itemCount);
 
-	msg = proto_CreateTurnMsg(heapId, itemCount);
-	char* buffer = proto_SerializeMsg(msg);
+	while(1) {
+		char line[64];
+		fgets(line, 64, stdin);
+		line[63] = '\0';
 
-	send(client_Socket, buffer, strlen(buffer)+1, 0);
-	printf("Move sent, waiting for response... \n");
+		if(strncmp(line, "surrender", strlen("surrender")) == 0) {
+			msg = proto_CreateSurrenderMsg();
+			char* buffer = proto_SerializeMsg(msg);
 
-	proto_FreeMsg(msg);
-	free(buffer);
+			send(client_Socket, buffer, strlen(buffer)+1, 0);
+
+			free(buffer);
+			proto_FreeMsg(msg);
+			msg = NULL;
+
+			break;
+		} 
+		else if(sscanf(line, "%d %d", &heapId, &itemCount) == 2) {
+			msg = proto_CreateTurnMsg(heapId, itemCount);
+			char* buffer = proto_SerializeMsg(msg);
+
+			send(client_Socket, buffer, strlen(buffer)+1, 0);
+			printf("Move sent, waiting for response... \n");
+
+			proto_FreeMsg(msg);
+			free(buffer);
+
+			break;
+		} 
+
+		printf("Invalid move: %s\n", line);
+	}
 
 	//
 
@@ -156,6 +177,14 @@ bool client_Tick() {
 }
 
 void client_Shutdown() {
+	proto_Msg* msgAck = proto_CreateAckMsg(ACK_VALID);
+	char* buffer = proto_SerializeMsg(msgAck);
+
+	send(client_Socket, buffer, strlen(buffer), 0);
+
+	free(buffer);
+	proto_FreeMsg(msgAck);
+
 	closesocket(client_Socket);
 	game_Free(client_Game);
 }
@@ -165,4 +194,6 @@ void client_PrintState() {
 	for(int i = 0; i < game_GetHeapCount(client_Game); i++) 
 		printf("\t[%d]: %d\n", i, game_GetHeap(client_Game, i));
 	printf("\n");
+
+	printf("Max items per turn: %d\n", game_GetMaxItemsPerTurn(client_Game));
 }

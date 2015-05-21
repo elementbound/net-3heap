@@ -46,7 +46,7 @@ typedef struct {
 	int type;
 } proto_Msg;
 
-proto_Msg* proto_CreateSyncMsg(int heapCount, const int* heapData);
+proto_Msg* proto_CreateSyncMsg(int heapCount, const int* heapData, int maxItemsPerTurn);
 proto_Msg* proto_CreateTurnMsg(int heapId, int itemCount);
 proto_Msg* proto_CreateSurrenderMsg();
 proto_Msg* proto_CreateFinishMsg(int result);
