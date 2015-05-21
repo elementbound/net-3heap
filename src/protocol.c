@@ -59,7 +59,9 @@ proto_Msg* proto_CreateAckMsg(int response) {
 }
 
 void proto_FreeMsg(proto_Msg* msg) {
-	free(msg->sync.heapData);
+	if(msg->type == MSG_SYNC)
+		free(msg->sync.heapData);
+
 	free(msg);
 }
 
