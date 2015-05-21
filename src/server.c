@@ -31,6 +31,7 @@ bool server_AcceptPlayer(int playerId);
 bool server_Tick();
 void server_Shutdown();
 
+void server_Sync(int playerId);
 void server_PrintState();
 
 int main(int argc, char** argv) {
@@ -47,12 +48,14 @@ int main(int argc, char** argv) {
 	if(!server_Init())
 		die("Server init fail\n");
 
-	for(int i = 0; i < PLAYER_COUNT; i++)
+	for(int i = 0; i < PLAYER_COUNT; i++) {
+		printf("Waiting for player %d... \n", i);
 		while(!server_AcceptPlayer(i))
 			;
+	}
 
 	while(server_Tick())
-		;
+		;//Sleep(2000);
 
 	server_Shutdown();
 	net_Shutdown();
@@ -96,19 +99,16 @@ bool server_Tick() {
 	if(!net_CanWrite(server_PlayerSockets[server_NextPlayer]))
 		return 0;
 
+	if(game_IsFinished(server_Game)) {
+		printf("Game finished\n");
+		return 0;
+	}
+
 	//sync
 	console_Clear();
 	server_PrintState();
 	printf("Syncing... \n");
-	{
-		proto_Msg* msg = proto_CreateSyncMsg(game_GetHeapCount(server_Game), game_GetHeapData(server_Game));
-		char* buffer = proto_SerializeMsg(msg);
-
-		send(server_PlayerSockets[server_NextPlayer], buffer, strlen(buffer)+1, 0);
-
-		free(buffer);
-		proto_FreeMsg(msg);
-	}
+	server_Sync(server_NextPlayer);
 
 	//wait for player turn
 	console_Clear();
@@ -160,10 +160,27 @@ bool server_Tick() {
 }
 
 void server_Shutdown() {
+	printf("Server shutdown!\n");
+
+	printf("\tClosing listen socket...\n");
 	closesocket(server_ListenSocket);
 
-	for(int i = 0; i < PLAYER_COUNT; i++)
+	for(int i = 0; i < PLAYER_COUNT; i++) {
+		printf("\tParting ways with player %d\n", i);
+		printf("\t\tSending finish message\n", i);
+		proto_Msg* msg = proto_CreateFinishMsg();
+		char* buffer = proto_SerializeMsg(msg);
+		send(server_PlayerSockets[i], buffer, strlen(buffer)+1, 0);
+
+		free(buffer);
+		proto_FreeMsg(msg);
+
+		printf("\t\tClosing socket\n");
 		closesocket(server_PlayerSockets[i]);
+
+		Sleep(500);
+		printf("\n");
+	}
 
 	game_Free(server_Game);
 }
@@ -179,4 +196,14 @@ void server_PrintState() {
 	printf("Initial heap size: %d\n", server_HeapMax);
 
 	printf("\n");
+}
+
+void server_Sync(int playerId) {
+	proto_Msg* msg = proto_CreateSyncMsg(game_GetHeapCount(server_Game), game_GetHeapData(server_Game));
+	char* buffer = proto_SerializeMsg(msg);
+
+	send(server_PlayerSockets[playerId], buffer, strlen(buffer)+1, 0);
+
+	free(buffer);
+	proto_FreeMsg(msg);
 }

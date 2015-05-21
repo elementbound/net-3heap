@@ -41,7 +41,7 @@ int main(int argc, char** argv) {
 		die("Client init fail\n");
 
 	while(client_Tick())
-		;
+		;//Sleep(2000);
 
 	client_Shutdown();
 	net_Shutdown();
@@ -80,8 +80,20 @@ bool client_Tick() {
 	recv_stringbuffer(client_Socket, client_Buffer);
 	proto_Msg* msg = proto_ParseMsg(stringbuffer_data(client_Buffer));
 
-	if(msg->type != MSG_SYNC) {
-		printf("Excpected sync message. Got instead: \n%s\n", stringbuffer_data(client_Buffer));
+	if(msg->type == MSG_SYNC) {
+		printf("Syncing game state... \n");
+		game_Sync(client_Game, msg->sync.heapData, msg->sync.heapCount, msg->sync.maxItemsPerTurn);
+	}
+	else if (msg->type == MSG_FINISH) {
+		printf("Game finished\n");
+		proto_FreeMsg(msg);
+
+		return 0;
+	}
+	else {
+		printf("Excpected sync or finish message. Got instead: \n%s\n", stringbuffer_data(client_Buffer));
+
+		proto_FreeMsg(msg);
 		return 0;
 	}
 
