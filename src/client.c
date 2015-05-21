@@ -86,6 +86,14 @@ bool client_Tick() {
 	}
 	else if (msg->type == MSG_FINISH) {
 		printf("Game finished\n");
+		printf("Reason: %d - ", msg->finish.result);
+		switch(msg->finish.result) {
+			case FIN_WIN: printf("You won!\n"); break;
+			case FIN_LOSE: printf("You lost!\n"); break;
+			case FIN_ERROR: printf("Error. ._. \n"); break;
+			default: printf("???\n"); break;
+		}
+		
 		proto_FreeMsg(msg);
 
 		return 0;
@@ -135,18 +143,6 @@ bool client_Tick() {
 	switch(msg->type) {
 		case MSG_ACK: 
 			printf("Server acknowledged with result %d\n", msg->ack.response);
-		break;
-
-		case MSG_FINISH: 
-			printf("Game finished\n");
-			printf("Reason: %d\n", msg->finish.result);
-			switch(msg->finish.result) {
-				case FIN_WIN: printf("You won!\n"); break;
-				case FIN_LOSE: printf("You lost!\n"); break;
-				case FIN_ERROR: printf("Error. ._. \n"); break;
-				default: printf("???\n"); break;
-			}
-			return 0;
 		break;
 	}
 

@@ -180,6 +180,8 @@ void server_Shutdown() {
 
 	for(int i = 0; i < PLAYER_COUNT; i++) {
 		printf("\tParting ways with player %d\n", i);
+		Sleep(500);
+		
 		printf("\t\tSending finish message\n", i);
 		proto_Msg* msg = proto_CreateFinishMsg(server_PlayerResult[i]);
 		char* buffer = proto_SerializeMsg(msg);
@@ -191,7 +193,6 @@ void server_Shutdown() {
 		printf("\t\tClosing socket\n");
 		closesocket(server_PlayerSockets[i]);
 
-		Sleep(500);
 		printf("\n");
 	}
 
