@@ -42,10 +42,11 @@ proto_Msg* proto_CreateSurrenderMsg() {
 	return msg;
 }
 
-proto_Msg* proto_CreateFinishMsg() {
+proto_Msg* proto_CreateFinishMsg(int result) {
 	proto_Msg* msg = proto_AllocMsg();
 
 	msg->type = MSG_FINISH;
+	msg->finish.result = result;
 	return msg;
 }
 
@@ -114,7 +115,8 @@ proto_Msg* proto_ParseSurrender(const char* buffer) {
 proto_Msg* proto_ParseFinish(const char* buffer) {
 	proto_Msg* msg = proto_AllocMsg();
 	msg->type = MSG_FINISH;
-	
+	msg->finish.result = atoi(strchr(buffer, '|')+1);
+
 	return msg;
 } 
 
@@ -168,7 +170,7 @@ char* proto_SerializeFinish(proto_Msg* msg) {
 	STRINGBUFFER* strbuff = stringbuffer_create();
 	char* str;
 	
-	stringbuffer_printf(strbuff, "%s|", MSGSTR_FINISH);
+	stringbuffer_printf(strbuff, "%s|%d", MSGSTR_FINISH, msg->finish.result);
 
 	str = stringbuffer_data(strbuff);
 	stringbuffer_free_shallow(strbuff);

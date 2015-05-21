@@ -138,7 +138,14 @@ bool client_Tick() {
 		break;
 
 		case MSG_FINISH: 
-			printf("Game ended\n");
+			printf("Game finished\n");
+			printf("Reason: %d\n", msg->finish.result);
+			switch(msg->finish.result) {
+				case FIN_WIN: printf("You won!\n"); break;
+				case FIN_LOSE: printf("You lost!\n"); break;
+				case FIN_ERROR: printf("Error. ._. \n"); break;
+				default: printf("???\n"); break;
+			}
 			return 0;
 		break;
 	}

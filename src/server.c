@@ -20,6 +20,7 @@ int server_TakeMax = 2;
 
 game_State* server_Game = NULL;
 int 		server_NextPlayer = -1;
+int			server_PlayerResult[PLAYER_COUNT];
 
 SOCKET server_ListenSocket;
 SOCKET server_PlayerSockets[PLAYER_COUNT];
@@ -96,11 +97,11 @@ bool server_AcceptPlayer(int playerId) {
 }
 
 bool server_Tick() {
-	if(!net_CanWrite(server_PlayerSockets[server_NextPlayer]))
-		return 0;
+	if(!net_CanWrite(server_PlayerSockets[server_NextPlayer])) {
+		printf("Can't send data to player %d\n", server_NextPlayer);
+		for(int i = 0; i <PLAYER_COUNT; i++)
+			server_PlayerResult[i] = FIN_ERROR;
 
-	if(game_IsFinished(server_Game)) {
-		printf("Game finished\n");
 		return 0;
 	}
 
@@ -149,12 +150,24 @@ bool server_Tick() {
 	char* msgBuffer = proto_SerializeMsg(msgResponse);
 	send(server_PlayerSockets[server_NextPlayer], msgBuffer, strlen(msgBuffer)+1, 0);
 
-	if(validMove) 
-		server_NextPlayer = (server_NextPlayer+1) % PLAYER_COUNT;
-
 	free(msgBuffer);
 	proto_FreeMsg(msg);
 	proto_FreeMsg(msgResponse);
+
+	//
+
+	if(validMove) {
+		if(game_IsFinished(server_Game)) {
+			printf("Game finished\n");
+
+			for(int i = 0; i < PLAYER_COUNT; i++)
+				server_PlayerResult[i] = (i == server_NextPlayer) ? FIN_WIN : FIN_LOSE;
+
+			return 0;
+		}
+
+		server_NextPlayer = (server_NextPlayer+1) % PLAYER_COUNT;
+	}
 
 	return 1;
 }
@@ -168,7 +181,7 @@ void server_Shutdown() {
 	for(int i = 0; i < PLAYER_COUNT; i++) {
 		printf("\tParting ways with player %d\n", i);
 		printf("\t\tSending finish message\n", i);
-		proto_Msg* msg = proto_CreateFinishMsg();
+		proto_Msg* msg = proto_CreateFinishMsg(server_PlayerResult[i]);
 		char* buffer = proto_SerializeMsg(msg);
 		send(server_PlayerSockets[i], buffer, strlen(buffer)+1, 0);
 

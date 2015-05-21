@@ -17,6 +17,10 @@
 #define ACK_VALID			1
 #define ACK_INVALID			0
 
+#define FIN_ERROR			1
+#define FIN_WIN				2
+#define FIN_LOSE			3
+
 typedef struct {
 	union {
 		struct {
@@ -33,6 +37,10 @@ typedef struct {
 		struct {
 			int response;
 		} ack;
+
+		struct {
+			int result;
+		} finish;
 	};
 
 	int type;
@@ -41,7 +49,7 @@ typedef struct {
 proto_Msg* proto_CreateSyncMsg(int heapCount, const int* heapData);
 proto_Msg* proto_CreateTurnMsg(int heapId, int itemCount);
 proto_Msg* proto_CreateSurrenderMsg();
-proto_Msg* proto_CreateFinishMsg();
+proto_Msg* proto_CreateFinishMsg(int result);
 proto_Msg* proto_CreateAckMsg(int response);
 
 void proto_FreeMsg(proto_Msg* msg);
