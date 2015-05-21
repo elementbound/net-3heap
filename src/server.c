@@ -85,6 +85,15 @@ bool server_AcceptPlayer(int playerId) {
 	if(server_PlayerSockets[playerId] == INVALID_SOCKET)
 		return 0;
 
+	//sync
+	proto_Msg* msg = proto_CreateSyncMsg(game_GetHeapCount(server_Game), game_GetHeapData(server_Game));
+	char* buffer = proto_SerializeMsg(msg);
+
+	send(server_PlayerSockets[playerId], buffer, strlen(buffer)+1, 0);
+
+	free(buffer);
+	proto_FreeMsg(msg);
+	
 	stringbuffer_clear(server_Buffer);
 	return 1;
 }
@@ -96,6 +105,7 @@ bool server_Tick() {
 	int waitCounter;
 	for(waitCounter = 0; !net_CanRead(server_PlayerSockets[server_NextPlayer]); waitCounter++)
 		printf("Waiting for player[%d]... %d\r", server_NextPlayer, waitCounter);
+	printf("\n");
 
 	stringbuffer_clear(server_Buffer);
 	recv_stringbuffer(server_PlayerSockets[server_NextPlayer], server_Buffer);

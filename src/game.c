@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <stdio.h>
+
 #define HEAP_COUNT 3
 
 typedef struct {
@@ -14,8 +16,11 @@ game_State* game_Init(int itemsPerHeap, int maxItemsPerTurn) {
 	game_State* game = (game_State*)malloc(sizeof(game_State));
 
 	game->heapCount = HEAP_COUNT;
-	game->heap = (int*)calloc(game->heapCount, sizeof(int));
+	game->heap = (int*)malloc(game->heapCount * sizeof(int));
 	game->maxItemsPerTurn = maxItemsPerTurn;
+
+	for(int i = 0; i < game->heapCount; i++) 
+		game->heap[i] = itemsPerHeap;
 
 	return game;
 }
@@ -36,14 +41,21 @@ void game_Sync(game_State* game, int* heapData, int heapCount, int maxItemsPerTu
 }
 
 bool game_Turn(game_State* game, int heapId, int itemCount) {
-	if(heapId >= game->heapCount) 
+	if(heapId >= game->heapCount) {
+		printf("[Game]Turn: wrong heap %d/%d\n", heapId, game->heapCount);
 		return false;
+	}
 
-	if(itemCount > game->maxItemsPerTurn)
+	if(itemCount > game->maxItemsPerTurn) {
+		printf("[Game]Turn: take over limit %d/%d\n", itemCount, game->maxItemsPerTurn);
 		return false;
+	}
 
-	if(itemCount > game->heap[heapId])
+	if(itemCount > game->heap[heapId]) {
+		printf("[Game]Turn: take over heap %d/%d\n", itemCount, game->heap[heapId]);
 		return false;
+	}
+
 
 	game->heap[heapId] -= itemCount;
 	return true;

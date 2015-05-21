@@ -92,6 +92,11 @@ bool client_Tick() {
 
 	msg = proto_ParseMsg(stringbuffer_data(client_Buffer));
 	switch(msg->type) {
+		case MSG_SYNC:
+			printf("Syncing game state... \n");
+			game_Sync(client_Game, msg->sync.heapData, msg->sync.heapCount, msg->sync.maxItemsPerTurn);
+		break;
+
 		case MSG_ACK: 
 			printf("Server acknowledged with result %d\n", msg->ack.response);
 		break;
