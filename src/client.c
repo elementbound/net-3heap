@@ -59,6 +59,10 @@ bool client_Init() {
 		serverAddr.sin_addr.s_addr = client_Ip;
 		serverAddr.sin_port = htons(client_Port);
 
+	char on = 1;
+	setsockopt(client_Socket, SOL_SOCKET, SO_REUSEADDR, (char *)&on, sizeof on);
+	setsockopt(client_Socket, SOL_SOCKET, SO_KEEPALIVE, (char *)&on, sizeof on);
+
 	int res = connect(client_Socket, (struct sockaddr*)&serverAddr, sizeof(serverAddr));
 	if(res != 0)
 		return 0;
@@ -93,7 +97,7 @@ bool client_Tick() {
 			case FIN_ERROR: printf("Error. ._. \n"); break;
 			default: printf("???\n"); break;
 		}
-		
+
 		proto_FreeMsg(msg);
 
 		return 0;

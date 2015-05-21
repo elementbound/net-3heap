@@ -73,6 +73,10 @@ bool server_Init() {
 		serverAddr.sin_addr.s_addr = INADDR_ANY;
 		serverAddr.sin_port = htons(server_Port);
 
+	char on = 1;
+	setsockopt(server_ListenSocket, SOL_SOCKET, SO_REUSEADDR, (char *)&on, sizeof on);
+	setsockopt(server_ListenSocket, SOL_SOCKET, SO_KEEPALIVE, (char *)&on, sizeof on);
+
 	int res = bind(server_ListenSocket, (struct sockaddr*)&serverAddr, sizeof(serverAddr));
 	if(res != 0)
 		return 0;
@@ -181,7 +185,7 @@ void server_Shutdown() {
 	for(int i = 0; i < PLAYER_COUNT; i++) {
 		printf("\tParting ways with player %d\n", i);
 		Sleep(500);
-		
+
 		printf("\t\tSending finish message\n", i);
 		proto_Msg* msg = proto_CreateFinishMsg(server_PlayerResult[i]);
 		char* buffer = proto_SerializeMsg(msg);
