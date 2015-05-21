@@ -8,6 +8,7 @@
 #include "net.h"
 #include "protocol.h"
 #include "game.h"
+#include "console.h"
 
 #define die(msg) {printf(msg); exit(1);}
 
@@ -29,6 +30,8 @@ bool server_Init();
 bool server_AcceptPlayer(int playerId);
 bool server_Tick();
 void server_Shutdown();
+
+void server_PrintState();
 
 int main(int argc, char** argv) {
 	if(argc < 4)
@@ -85,15 +88,6 @@ bool server_AcceptPlayer(int playerId) {
 	if(server_PlayerSockets[playerId] == INVALID_SOCKET)
 		return 0;
 
-	//sync
-	proto_Msg* msg = proto_CreateSyncMsg(game_GetHeapCount(server_Game), game_GetHeapData(server_Game));
-	char* buffer = proto_SerializeMsg(msg);
-
-	send(server_PlayerSockets[playerId], buffer, strlen(buffer)+1, 0);
-
-	free(buffer);
-	proto_FreeMsg(msg);
-	
 	stringbuffer_clear(server_Buffer);
 	return 1;
 }
@@ -102,10 +96,26 @@ bool server_Tick() {
 	if(!net_CanWrite(server_PlayerSockets[server_NextPlayer]))
 		return 0;
 
-	int waitCounter;
-	for(waitCounter = 0; !net_CanRead(server_PlayerSockets[server_NextPlayer]); waitCounter++)
-		printf("Waiting for player[%d]... %d\r", server_NextPlayer, waitCounter);
-	printf("\n");
+	//sync
+	console_Clear();
+	server_PrintState();
+	printf("Syncing... \n");
+	{
+		proto_Msg* msg = proto_CreateSyncMsg(game_GetHeapCount(server_Game), game_GetHeapData(server_Game));
+		char* buffer = proto_SerializeMsg(msg);
+
+		send(server_PlayerSockets[server_NextPlayer], buffer, strlen(buffer)+1, 0);
+
+		free(buffer);
+		proto_FreeMsg(msg);
+	}
+
+	//wait for player turn
+	console_Clear();
+	server_PrintState();
+	printf("Waiting for player... \n");
+	while(!net_CanRead(server_PlayerSockets[server_NextPlayer]))
+		;
 
 	stringbuffer_clear(server_Buffer);
 	recv_stringbuffer(server_PlayerSockets[server_NextPlayer], server_Buffer);
@@ -156,4 +166,17 @@ void server_Shutdown() {
 		closesocket(server_PlayerSockets[i]);
 
 	game_Free(server_Game);
+}
+
+void server_PrintState() {
+	printf("Heaps: \n");
+	for(int i = 0; i < game_GetHeapCount(server_Game); i++) 
+		printf("\t[%d]: %d\n", i, game_GetHeap(server_Game, i));
+
+	printf("\n");
+	printf("Next player: %d\n", server_NextPlayer);
+	printf("Max items per turn: %d\n", server_TakeMax);
+	printf("Initial heap size: %d\n", server_HeapMax);
+
+	printf("\n");
 }

@@ -4,7 +4,8 @@ project("net-3heaps" C)
 set(COMMON_SOURCES	"game.c"
 					"protocol.c"
 					"net.c"
-					"stringbuffer.c")
+					"stringbuffer.c"
+					"console.c")
 
 add_executable("server" "server.c" ${COMMON_SOURCES})
 add_executable("client" "client.c" ${COMMON_SOURCES})

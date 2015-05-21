@@ -8,6 +8,7 @@
 #include "net.h"
 #include "protocol.h"
 #include "game.h"
+#include "console.h"
 
 #define die(msg) {printf(msg); exit(1);}
 
@@ -23,6 +24,8 @@ STRINGBUFFER* client_Buffer;
 bool client_Init();
 bool client_Tick();
 void client_Shutdown();
+
+void client_PrintState();
 
 int main(int argc, char** argv) {
 	if(argc < 3)
@@ -66,12 +69,38 @@ bool client_Init() {
 }
 
 bool client_Tick() {
+	//Wait for sync
+	console_Clear();
+	client_PrintState();
+	printf("Waiting for sync... \n");
+	while(!net_CanRead(client_Socket))
+		;
+
+	stringbuffer_clear(client_Buffer);
+	recv_stringbuffer(client_Socket, client_Buffer);
+	proto_Msg* msg = proto_ParseMsg(stringbuffer_data(client_Buffer));
+
+	if(msg->type != MSG_SYNC) {
+		printf("Excpected sync message. Got instead: \n%s\n", stringbuffer_data(client_Buffer));
+		return 0;
+	}
+
+	printf("Syncing game state... \n");
+	game_Sync(client_Game, msg->sync.heapData, msg->sync.heapCount, msg->sync.maxItemsPerTurn);
+
+	proto_FreeMsg(msg);
+	msg = NULL;
+
+	//
+
 	int heapId, itemCount;
 
+	console_Clear();
+	client_PrintState();
 	printf("Your next move? ");
 	scanf("%d %d", &heapId, &itemCount);
 
-	proto_Msg* msg = proto_CreateTurnMsg(heapId, itemCount);
+	msg = proto_CreateTurnMsg(heapId, itemCount);
 	char* buffer = proto_SerializeMsg(msg);
 
 	send(client_Socket, buffer, strlen(buffer)+1, 0);
@@ -92,17 +121,13 @@ bool client_Tick() {
 
 	msg = proto_ParseMsg(stringbuffer_data(client_Buffer));
 	switch(msg->type) {
-		case MSG_SYNC:
-			printf("Syncing game state... \n");
-			game_Sync(client_Game, msg->sync.heapData, msg->sync.heapCount, msg->sync.maxItemsPerTurn);
-		break;
-
 		case MSG_ACK: 
 			printf("Server acknowledged with result %d\n", msg->ack.response);
 		break;
 
 		case MSG_FINISH: 
 			printf("Game ended\n");
+			return 0;
 		break;
 	}
 
@@ -114,4 +139,11 @@ bool client_Tick() {
 void client_Shutdown() {
 	closesocket(client_Socket);
 	game_Free(client_Game);
+}
+
+void client_PrintState() {
+	printf("Heaps: \n");
+	for(int i = 0; i < game_GetHeapCount(client_Game); i++) 
+		printf("\t[%d]: %d\n", i, game_GetHeap(client_Game, i));
+	printf("\n");
 }
